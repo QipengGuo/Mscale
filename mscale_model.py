@@ -230,10 +230,10 @@ def get_express(train=False, emb_flag=None):
 	    h_context_free = h_context_free[cw_index].reshape((cw_index.shape[0], cw_index.shape[1], gru1_dim))
 	    h_context_free = h_context_free.dimshuffle(1,0,2)
         
-            if emb_flag=='context_dependnet':
+            if emb_flag=='context_dependent':
                 sc, _ = theano.scan(_gen_word_emb_step, sequences=[h_context_free], outputs_info = [T.zeros((batch_size, emb_dim)), None], name='scan_gen_emb', profile=False)
                 word_embs = sc[1]
-            else:
+            if emb_flag=='context_free':
                 sc, _ = theano.scan(_gen_word_emb_step_free, sequences=[h_context_free], name='scan_gen_emb_free')
                 word_embs = sc
         if emb_flag=='baseline':
