@@ -164,14 +164,17 @@ def _gen_word_emb_step(h_context_free, h_before):
         batch_mask = get_mask(h_context_free)
 	D_h_c = h_before 
 	D_h_cf = h_context_free
-	hw_c = high_way(cur_in = D_h_c, name = 'hw_emb_c', shape=(emb_dim ,emb_dim))
+        D_h = 0.5 * (D_h_c + D_h_cf)
+        hw_h = high_way(cur_in = D_h, name = 'hw_emb_h', shape=(emb_dim, emb_dim))
+	#hw_c = high_way(cur_in = D_h_c, name = 'hw_emb_c', shape=(emb_dim ,emb_dim))
         #hw_c = high_way(cur_in = hw_c, name = 'hw_emb_c2', shape=(emb_dim, emb_dim))
-	hw_cf = high_way(cur_in = D_h_cf, name = 'hw_emb_cf', shape=(gru1_dim, emb_dim))
+	#hw_cf = high_way(cur_in = D_h_cf, name = 'hw_emb_cf', shape=(gru1_dim, emb_dim))
         #hw_cf = high_way(cur_in = hw_cf, name = 'hw_emb_cf2', shape=(emb_dim, emb_dim))
-	word_emb = batch_mask * 0.5 * (hw_c+hw_cf)
-	#gru_emb = model.gru(cur_in = D_emb, rec_in = h_before, name = 'gru_emb', shape = (emb_dim, emb_dim))
-	#return gru_emb, word_emb_att, att
-	h_before = h_before * 0.5 + D_emb * 0.5
+	#word_emb = batch_mask * 0.5 * (hw_c+hw_cf)
+        word_emb = batch_mask * hw_h
+	#gru_emb = model.gru(cur_in = word_emb, rec_in = h_before, name = 'gru_emb', shape = (emb_dim, emb_dim))
+	#return gru_emb, word_emb
+	h_before = h_before * 0.5 + word_emb * 0.5
 	return h_before, word_emb
 
 def _gen_word_emb_step_free(h_context_free):
