@@ -212,6 +212,8 @@ class txt_data(object):
                 for s in slist:
                     s = s.lower()
                     s = s.decode('utf-8')
+                    s = u'\u1d92' + s + u'\u1d93'
+                    s = s.replace('<unk>', u'\u1d94')
                     if self.raw_file:
                         ws = nltk.word_tokenize(s)
                     else:
@@ -241,6 +243,8 @@ class txt_data(object):
                 for s in slist:
                     s = s.lower()
                     s = s.decode('utf-8')
+                    s = u'\u1d92' + s + u'\u1d93'
+                    s = s.replace('<unk>', u'\u1d94')
                     if self.raw_file:
                         if s[:4]=='<doc' or s[:5]=='</doc': #ignore wiki head
                             continue

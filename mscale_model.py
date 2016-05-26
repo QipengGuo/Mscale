@@ -118,13 +118,13 @@ in_dim = Dataset.c_dim # character dict size
 out_dim = Dataset.c_dim 
 word_out_dim = Dataset.w_dim # word dict size
 
-var_lr = theano.shared(NP.asarray(1e-3, dtype=theano.config.floatX)) #learning rate of rmsprop
+var_lr = theano.shared(NP.asarray(1.0, dtype=theano.config.floatX)) #learning rate of rmsprop
 char_in = T.imatrix()
 cw_index1 = T.imatrix() #convert word embedding matrix from sparse to dense. using to speed up 
 cw_index2 = T.imatrix()
 word_target = T.imatrix()
 model = Model()
-#drop1 = Dropout(shape=(train_batch_size, gru1_dim))
+#model.load('./saves/mscale_de_context_free_34')
 drop2 = Dropout(shape=(word_target.shape[0], emb_dim), prob=0.1)
 drop3 = Dropout(shape=(word_target.shape[0], gru2_dim), prob=0.1)
 drop4 = Dropout(shape=(word_target.shape[0], emb_dim), prob=0.1)
@@ -207,7 +207,7 @@ def word_step(word_emb, prev_h1):
 	else:
             D_gru1 = gru1
 
-	return D_gru1
+	return gru1, D_gru1
 
 drop_flag = False
 EPSI = 1e-15
@@ -237,9 +237,9 @@ def get_express(train=False, emb_flag=None):
             sc, _ = theano.scan(_word_step_embedding, sequences=[word_target[:, :-1].dimshuffle(1,0)], name='scan_word_emb')
             word_embs = sc
 
-	sc,_ = theano.scan(word_step, sequences=[word_embs], outputs_info = [T.zeros((batch_size, gru2_dim))], name='scan_word_rnn', profile=False)
+	sc,_ = theano.scan(word_step, sequences=[word_embs], outputs_info = [T.zeros((batch_size, gru2_dim)), None], name='scan_word_rnn', profile=False)
 
-	word_out = sc.dimshuffle(1,0,2).reshape((word_target.shape[0]*(word_target.shape[1]-1), gru2_dim))
+	word_out = sc[1].dimshuffle(1,0,2).reshape((word_target.shape[0]*(word_target.shape[1]-1), gru2_dim))
 	word_out = softmax(model.fc(cur_in = word_out, name = 'fc_word', shape=(gru2_dim, word_out_dim)))
 	word_out = T.clip(word_out, EPSI, 1.0-EPSI)
 
@@ -249,7 +249,7 @@ def get_express(train=False, emb_flag=None):
 	cost_all = cost_word_LM
 
 	if train:
-                grad_all = rmsprop(cost_all, model.weightsPack.getW_list(), lr=var_lr,epsilon=var_lr**2, ignore_input_disconnect=True)
+                grad_all = rmsprop(cost_all, model.weightsPack.getW_list(), lr=var_lr,epsilon=var_lr**2, rescale = 5. , ignore_input_disconnect=True)
 		return cost_all, PPL_word_LM, grad_all
 	else:
 		return cost_all, PPL_word_LM
@@ -324,11 +324,11 @@ for i in xrange(600):
     print '\nEpoch = ', str(i), ' Test Word PPL = ', valid_PPL
     if valid_PPL > last_valid_PPL:
         valid_increase_cnt += 1
-        if valid_increase_cnt>=2:
+        if valid_increase_cnt>=1:
             print 'change learning rate', var_lr.get_value()*0.5
             var_lr.set_value(var_lr.get_value()*0.5)
             valid_increase_cnt = 0
-    valid_PPL = last_valid_PPL
+    last_valid_PPL = valid_PPL
 
 
 
